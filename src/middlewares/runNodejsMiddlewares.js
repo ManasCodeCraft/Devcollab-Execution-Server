@@ -8,6 +8,9 @@ const jwtKey = require("../../config/config").mainServerConfig.jwtSecret;
 
 module.exports.validateUser = asyncRequestHandler(async (req, res, next) => {
   const projectId = req[`${devcollabKey}_projectId`];
+  console.log(req.cookies);
+  console.log(devcollabKey);
+  console.log(authCookie)
   const cookie = req.cookies[authCookie];
   if (!cookie) {
      throw errorObj(412)
