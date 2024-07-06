@@ -1,3 +1,4 @@
+const cookieParser = require("cookie-parser");
 const config = require("../../config/config");
 const { getAllProjects } = require("../services/databaseOperations");
 
@@ -31,6 +32,8 @@ module.exports.setUpRoute = asyncHandler(async (projectId) => {
     req[key] = projectId;
     next();
   });
+
+  server.use(`/client-project/${projectId}`, cookieParser)
 
   const {
     validateUser,
