@@ -18,7 +18,6 @@ module.exports.stopClientProject = asyncRequestHandler(async (req, res, next) =>
     throw errorObj(400, "Invalid Project");
   }
   ClientAppManager.closeServer(projectId)
-  closeClientServer(projectId);
   res.status(200).send();
 })
 
