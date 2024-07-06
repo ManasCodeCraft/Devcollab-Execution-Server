@@ -36,7 +36,7 @@ module.exports.serveClientApp = asyncRequestHandler(async (req, res, next) => {
   }
   const app = ClientAppManager.getApp(projectId);
   if (!app) {
-    throw errorObj(404, "Not Found");
+    throw errorObj(404, "Not Found in Client App Manager");
   }
   app(req, res, next);
 });
