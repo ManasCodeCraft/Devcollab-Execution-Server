@@ -11,6 +11,7 @@
     "estraverse": "^5.3.0",
     "express": "^4.19.2",
     "fs-extra": "^11.2.0",
+    "isbinaryfile": "^5.0.2",
     "jsonwebtoken": "^9.0.2",
     "madge": "^7.0.0",
     "mkdirp": "^3.0.1",

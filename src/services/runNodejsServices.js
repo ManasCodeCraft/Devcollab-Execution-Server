@@ -2,32 +2,25 @@ const ClientAppManager = require("../core/ClientAppManager");
 const fs = require("fs-extra");
 const path = require("path");
 const { NodeVM } = require("vm2");
-const io = require("socket.io-client");
 const {
   ClientProjectPath,
   getEntryFile,
   modifyAppFile,
+  clientProjectTemplatePath,
+  ClientProjectBaseDirPath,
 } = require("../utils/clientProjectUtils");
 const { copyProjectfromDatabase } = require("./localProjectServices");
 const { onConsoleLog, updateStatus } = require("./apiClient");
-const { mainServerURL } = require("../../config/config")
-const { execSync } = require('child_process');
 const { executeCommand } = require("../utils/executeCommand");
 
-module.exports.initialExecute = asyncHandler(async (projectId, userId) => {
-  await copyProjectfromDatabase(projectId);
-  const socket = io(`${mainServerURL}/waiting-modal-socket`)
-
-  socket.emit('trigger-change-text', {userId, text: 'Installing packages... Please wait'})
-
-  execSync('npm init -y', {cwd: ClientProjectPath(projectId)})
-  execSync('npm install', {cwd: ClientProjectPath(projectId)})
-
+module.exports.initialExecute = asyncHandler(async (projectId, userId)=>{
+  const client_project_path = ClientProjectPath(projectId);
+  const client_basedir_path = ClientProjectBaseDirPath(projectId);
+  const templatePath = clientProjectTemplatePath();
+  await fs.copy(path.join(templatePath, 'project'), client_project_path);
+  await fs.copy(path.join(templatePath, 'program_run.js'), path.join(client_basedir_path, 'program_run.js'));
   await module.exports.runClientProject(projectId);
-  const { setUpRoute } = require("../core/setUpRoutes");
-
-  await setUpRoute(projectId);
-});
+})
 
 module.exports.runClientProject = asyncHandler(async (projectId) => {
   const client_project_path = ClientProjectPath(projectId);
@@ -47,6 +40,7 @@ module.exports.runClientProject = asyncHandler(async (projectId) => {
   const code = await fs.readFile(entryFilePath, "utf-8");
 
   const vm = new NodeVM({
+    timeout: 1000*60*60*3,
     console: "redirect",
     sandbox: {},
     require: {

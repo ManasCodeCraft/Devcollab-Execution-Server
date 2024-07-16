@@ -4,6 +4,7 @@ const escodegen = require("escodegen");
 const fs = require("fs-extra");
 const path = require("path");
 const axios = require("axios");
+const { terminateProgramFunctionString } = require("./vmUtils");
 
 module.exports.getEntryFile = asyncHandler(async (client_project_path) => {
   const entryfile = getEntryFileFromPackageJson(client_project_path);
@@ -47,22 +48,25 @@ const getEntryFileFromPackageJson = syncHandler((client_project_path) => {
   return null;
 });
 
+module.exports.ClientProjectBaseDirPath = function(projectId){
+  return path.join(__dirname, "../../ClientProjects", `project_${projectId}`);
+}
+
 module.exports.ClientProjectPath = function ClientProjectPath(projectId) {
-  const client_project_dir = path.join(__dirname, "../../ClientProjects");
   const client_project_path = path.join(
-    client_project_dir,
-    `project_${projectId}`,
+     module.exports.ClientProjectBaseDirPath(projectId),
     'project'
   );
   return client_project_path;
 };
 
-module.exports.NodeModulesPath = function (projectId) {
-  return path.join(__dirname, "../../ClientProjects", `project_${projectId}`, 'node_modules');
-};
+module.exports.clientProjectTemplatePath = function (){
+  return path.join(__dirname, "../../ClientProjects", "templateDir");
+}
 
-module.exports.ClientProjectBaseDirPath = function(projectId){
-  return path.join(__dirname, "../../ClientProjects", `project_${projectId}`);
+module.exports.formatClientFileFolderPath = function (pathArray, projectId){
+   const filePath = path.join(module.exports.ClientProjectPath(projectId), ...pathArray);
+   return filePath;
 }
 
 module.exports.modifyAppFile = asyncHandler(async (filePath) => {
@@ -110,23 +114,15 @@ module.exports.modifyAppFile = asyncHandler(async (filePath) => {
   });
 
   if (expressVarName) {
-    const httpRequireNode = esprima.parseScript(
-      `const http = require('http');`
-    ).body[0];
-
-    const serverCreateNode = esprima.parseScript(
-      `const server = http.createServer(${expressVarName});`
-    ).body[0];
+    const str = terminateProgramFunctionString(code)
 
     const exportNode = esprima.parseScript(
       `module.exports = {
         app: ${expressVarName},
-        closeServer: () => global = undefined
+        closeServer: () => { ${str} }
       };`
     ).body[0];
 
-    ast.body.unshift(httpRequireNode); // Add the require statement at the top
-    ast.body.push(serverCreateNode); // Add the server creation statement
     ast.body.push(exportNode); // Add the export statement
   } else {
     throw new Error("Express variable not found.");
@@ -134,7 +130,6 @@ module.exports.modifyAppFile = asyncHandler(async (filePath) => {
 
   const modifiedCode = escodegen.generate(ast);
   await fs.writeFile(filePath, modifiedCode, "utf8");
-
   return modifiedCode;
 });
 

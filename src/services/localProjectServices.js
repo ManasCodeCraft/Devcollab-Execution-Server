@@ -7,12 +7,14 @@ const {
   modifyAppFile,
   downloadImageFromCloudinary,
   ClientProjectBaseDirPath,
+  formatClientFileFolderPath,
 } = require("../utils/clientProjectUtils");
 const {
   getProjectById,
   getDirectoryById,
   getFileById,
 } = require("./databaseOperations");
+const { getFileOrFolderPath } = require("./apiClient");
 
 module.exports.createEmptyProject = asyncHandler(async (projectId) => {
   await fs.ensureDir(ClientProjectPath(projectId));
@@ -75,8 +77,6 @@ async function copyDirectoryFromDatabase(dirPath, dirId) {
 
 module.exports.deleteProject = asyncHandler(async (projectId) => {
   const projectPath = ClientProjectBaseDirPath(projectId);
-  await chmodRecursive(projectPath, '0o777')
-  await fs.remove(projectPath);
 
   const chmodRecursive = async (dir, mode) => {
     const items = await fs.readdir(dir);
@@ -93,16 +93,22 @@ module.exports.deleteProject = asyncHandler(async (projectId) => {
     await fs.chmod(dir, mode);
   };
 
+  await chmodRecursive(projectPath, 0o777)
+  await fs.remove(projectPath);
+
   return true;
 });
 
 module.exports.manageOnLocal = asyncHandler(
   async (id, isFile, task, nameOrContent = null) => {
-    const filefolderpath = await module.exports.getFileOrFolderPath(id, isFile);
+    var doc;
+    if(isFile) doc = await getFileById(id);
+    else doc = await getDirectoryById(id);
+
+    var filefolderpath = formatClientFileFolderPath(doc.path, doc.project)
     if (!filefolderpath) {
       return null;
     }
-
     // creating new file or folder
     if (task === "create") {
       if (isFile) {
@@ -150,41 +156,4 @@ module.exports.manageOnLocal = asyncHandler(
   }
 );
 
-module.exports.getFileOrFolderPath = asyncHandler(async (id, isFile) => {
-  var pathStack = [];
-  var projectId = null;
-  var clientpath = null;
 
-  while (id) {
-    if (isFile) {
-      const file = await getFileById(id);
-      if (!projectId) {
-        projectId = file.project;
-        clientpath = ClientProjectPath(projectId);
-      }
-      pathStack.push(file.name);
-      id = file.directory;
-      isFile = false;
-    } else {
-      const directory = await getDirectoryById(id);
-      if (!projectId) {
-        projectId = directory.project;
-        clientpath = ClientProjectPath(projectId);
-      }
-      if (directory.parentDirectory) {
-        pathStack.push(directory.name);
-        id = directory.parentDirectory;
-      } else {
-        id = null;
-      }
-    }
-  }
-  clientpath += "/";
-  clientpath += pathStack.reverse().join("/");
-
-  // if (!fs.existsSync(clientpath)) {
-  //   return null;
-  // }
-
-  return clientpath;
-});

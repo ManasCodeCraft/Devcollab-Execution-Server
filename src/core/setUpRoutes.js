@@ -20,7 +20,6 @@ module.exports.setUpClientProjectRoutes = async function () {
     if (project.runningStatus === "running") {
       console.log("Starting - ", project._id);
       await runClientProject(project._id);
-      // await module.exports.setUpRoute(project._id);
     }
   }
 };

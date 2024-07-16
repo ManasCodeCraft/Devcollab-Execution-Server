@@ -13,6 +13,7 @@ const { initServer, setUpClientProjectRoutes } = require("./src/core/setUpRoutes
 const cookieParser = require("cookie-parser");
 const localProjectRouter = require("./src/routers/localProjectRouter");
 const { setUpSocketListeners } = require("./src/services/mainServerRequestHandler");
+const runProgramRouter = require("./src/routers/runProgramRouter");
 
 const app = express();
 
@@ -51,7 +52,8 @@ async function startServer() {
   });
 
   app.use("/run-nodejs", runNodejsRouter);
-  app.use("/on-local", localProjectRouter)
+  app.use("/on-local", localProjectRouter);
+  app.use('/run-program', runProgramRouter);
 
   app.use(centralizedErrorHandler);
 

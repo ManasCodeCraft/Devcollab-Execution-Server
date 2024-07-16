@@ -33,3 +33,7 @@ module.exports.updatePackageJson = asyncHandler(async (projectId, content)=>{
      return await socketRequest('update-package-json', {projectId, content});
 })
 
+module.exports.getFileOrFolderPath = asyncHandler(async (id, isFile)=>{
+     return await socketRequest('get-file-folder-path', {id, isFile});
+})
+

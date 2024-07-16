@@ -1,5 +1,5 @@
 const ClientAppManager = require("../core/ClientAppManager");
-const { initialExecute, runClientProject } = require("../services/runNodejsServices");
+const { runClientProject } = require("../services/runNodejsServices");
 const {execSync} = require('child_process');
 const { ClientProjectPath } = require("../utils/clientProjectUtils");
 const { updateStatus, updatePackageJson } = require("../services/apiClient");
@@ -7,20 +7,16 @@ const { executeCommand } = require("../utils/executeCommand");
 const path = require("path");
 const fs = require('fs-extra')
 
-module.exports.initProject = asyncRequestHandler(async (req, res, next) => {
-  const projectId = req.body.projectId;
-  const userId = req.body.userId;
-  await initialExecute(projectId, userId);
-
-  res.status(200).send();
-});
 
 module.exports.stopClientProject = asyncRequestHandler(async (req, res, next) =>{
   const projectId = req.body.projectId;
   if(!projectId){
     throw errorObj(400, "Invalid Project");
   }
+  try{
   ClientAppManager.closeServer(projectId)
+  } catch(e){};
+  
   res.status(200).send();
 })
 
