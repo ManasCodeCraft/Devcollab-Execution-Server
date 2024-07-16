@@ -6,13 +6,13 @@ const io = require("socket.io-client");
 const {
   ClientProjectPath,
   getEntryFile,
-  NodeModulesPath,
-  ClientProjectBaseDirPath,
+  modifyAppFile,
 } = require("../utils/clientProjectUtils");
 const { copyProjectfromDatabase } = require("./localProjectServices");
 const { onConsoleLog, updateStatus } = require("./apiClient");
 const { mainServerURL } = require("../../config/config")
-const { execSync } = require('child_process')
+const { execSync } = require('child_process');
+const { executeCommand } = require("../utils/executeCommand");
 
 module.exports.initialExecute = asyncHandler(async (projectId, userId) => {
   await copyProjectfromDatabase(projectId);
@@ -32,7 +32,11 @@ module.exports.initialExecute = asyncHandler(async (projectId, userId) => {
 module.exports.runClientProject = asyncHandler(async (projectId) => {
   const client_project_path = ClientProjectPath(projectId);
   if (!fs.existsSync(client_project_path)) {
-    return;
+     if(await copyProjectfromDatabase(projectId)){
+        await executeCommand('npm init -y', client_project_path)
+        await executeCommand("npm install", client_project_path);
+     }
+     else return;
   }
   const entry_file_name = await getEntryFile(client_project_path);
   if (!entry_file_name) {
@@ -49,15 +53,6 @@ module.exports.runClientProject = asyncHandler(async (projectId) => {
       builtin: ["*"],
       external: true,
       root: [client_project_path],
-      // resolve: (moduleName) => {
-      //   if (moduleName.startsWith("./") || moduleName.startsWith("../")) {
-      //     return path.resolve(projectPath, moduleName);
-      //   } else {
-      //     return require.resolve(moduleName, {
-      //       paths: [node_modules_dir],
-      //     });
-      //   }
-      // },
     },
   });
 
@@ -78,11 +73,19 @@ module.exports.runClientProject = asyncHandler(async (projectId) => {
   });
 
   try{
-    const {app, closeServer} = vm.run(code, entryFilePath);
+    var {app, closeServer} = vm.run(code, entryFilePath);
+    if(typeof app !== 'function'){
+        await modifyAppFile(entryFilePath);
+        await module.exports.runClientProject(projectId);
+        return;
+    }
+    
     ClientAppManager.addClientApp(projectId, [vm, app, closeServer]);
+    const { setUpRoute } = require('../core/setUpRoutes');
+    await setUpRoute(projectId);
     return app;
   } catch(error) {
-     const errorMessage = error.toString().replace('VM Error:', '');
+     const errorMessage = error.toString().replace('VMError:', '');
      await onConsoleLog(projectId, {
       project: projectId,
       details: errorMessage,

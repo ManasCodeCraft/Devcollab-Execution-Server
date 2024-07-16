@@ -7,7 +7,6 @@ module.exports.initServer = function initServer(app) {
   server = app;
 };
 
-
 module.exports.setUpClientProjectRoutes = async function () {
   if (!server) {
     console.error("Server is not available");
@@ -18,8 +17,11 @@ module.exports.setUpClientProjectRoutes = async function () {
   const { runClientProject } = require("../services/runNodejsServices");
 
   for (let project of projects) {
-    await runClientProject(project._id);
-    await module.exports.setUpRoute(project._id);
+    if (project.runningStatus === "running") {
+      console.log("Starting - ", project._id);
+      await runClientProject(project._id);
+      // await module.exports.setUpRoute(project._id);
+    }
   }
 };
 
@@ -39,6 +41,4 @@ module.exports.setUpRoute = asyncHandler(async (projectId) => {
   // server.use(`/client-project/${projectId}`, validateUser);
 
   server.use(`/client-project/${projectId}`, serveClientApp);
-
 });
-

@@ -30,15 +30,20 @@ module.exports.getEntryFile = asyncHandler(async (client_project_path) => {
 
 const getEntryFileFromPackageJson = syncHandler((client_project_path) => {
   const packageJsonPath = path.join(client_project_path, "package.json");
-  if (fs.pathExistsSync(packageJsonPath)) {
-    const packageJson = require(packageJsonPath);
-    if (
-      packageJson.main &&
-      fs.pathExistsSync(path.join(client_project_path, packageJson.main))
-    ) {
-      return packageJson.main;
+
+  if (fs.existsSync(packageJsonPath)) {
+    try {
+      const packageJsonContent = fs.readFileSync(packageJsonPath, 'utf-8');
+      const packageJson = JSON.parse(packageJsonContent);
+
+      if (packageJson.main && fs.existsSync(path.join(client_project_path, packageJson.main))) {
+        return packageJson.main;
+      }
+    } catch (error) {
+      console.error("Error reading or parsing package.json:", error);
     }
   }
+
   return null;
 });
 

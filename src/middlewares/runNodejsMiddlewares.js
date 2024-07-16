@@ -13,7 +13,7 @@ module.exports.validateUser = asyncRequestHandler(async (req, res, next) => {
      throw errorObj(404)
   }
   if (!projectId) {
-    throw errorObj(400, "Request Declined");
+    throw errorObj(400);
   }
   const userId = await new Promise((resolve, reject) => {
     jwt.verify(cookie, jwtKey, (err, decoded) => {
@@ -36,7 +36,7 @@ module.exports.serveClientApp = asyncRequestHandler(async (req, res, next) => {
   }
   const app = ClientAppManager.getApp(projectId);
   if (!app) {
-    throw errorObj(410, "Not Found in Client App Manager");
+    throw errorObj(404);
   }
   app(req, res, next);
 });

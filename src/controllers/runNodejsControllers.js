@@ -2,7 +2,10 @@ const ClientAppManager = require("../core/ClientAppManager");
 const { initialExecute, runClientProject } = require("../services/runNodejsServices");
 const {execSync} = require('child_process');
 const { ClientProjectPath } = require("../utils/clientProjectUtils");
-const { closeClientServer } = require("../core/setUpRoutes");
+const { updateStatus, updatePackageJson } = require("../services/apiClient");
+const { executeCommand } = require("../utils/executeCommand");
+const path = require("path");
+const fs = require('fs-extra')
 
 module.exports.initProject = asyncRequestHandler(async (req, res, next) => {
   const projectId = req.body.projectId;
@@ -37,6 +40,7 @@ module.exports.reloadClientProject = asyncRequestHandler(async (req, res, next)=
     throw errorObj(400, "Invalid Project");
   }
   await runClientProject(projectId)
+  await updateStatus(projectId, 'running');
   res.status(200).send();
 })
 
@@ -47,7 +51,10 @@ module.exports.installNodejsPackage = asyncRequestHandler(async (req, res, next)
   if(!packageName ||!projectId){
     throw errorObj(400, "Invalid Project or Package");
   }
-  execSync(`npm install ${packageName}`, {cwd: ClientProjectPath(projectId)})
+
+  await executeCommand(`npm install ${packageName}`, ClientProjectPath(projectId))
+  await updatePackageFile(projectId);
+
   res.status(200).send();
 })
 
@@ -59,3 +66,8 @@ module.exports.runNPMInstall = asyncRequestHandler(async (req,res,next)=>{
   execSync(`npm install`, {cwd: ClientProjectPath(projectId)})
   res.status(200).send();
 })
+
+async function updatePackageFile(projectId){
+  const content = await fs.readFile(path.join(ClientProjectPath(projectId), 'package.json'));
+  await updatePackageJson(projectId, content);
+}

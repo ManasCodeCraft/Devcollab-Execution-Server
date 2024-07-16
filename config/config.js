@@ -57,6 +57,7 @@ var executionServerConfig = {
 };
 
 const getMainServerConfig = asyncHandler(async ()=>{
+        console.log('Sending Request for setting up config...')
         let response = await axios.post(`${mainServerURL}/from-execution-server/server-config`, {
             interServerRequestKey: executionServerConfig.interServerRequestKey
         });
@@ -65,7 +66,8 @@ const getMainServerConfig = asyncHandler(async ()=>{
             mainServerConfig[key] = data[key];
         }
         mainServerConfig.cloudinary = cloudinary.config(mainServerConfig.cloudinaryConfig);
-    })
+        console.log('Config Set Up Successfully');
+})
 
 
 

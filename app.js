@@ -1,4 +1,5 @@
 require("./src/utils/globalHandlers");
+require("./socket");
 const config = require("./config/config");
 
 // nodejs Modules
@@ -11,11 +12,13 @@ const runNodejsRouter = require("./src/routers/runNodejsRouter");
 const { initServer, setUpClientProjectRoutes } = require("./src/core/setUpRoutes");
 const cookieParser = require("cookie-parser");
 const localProjectRouter = require("./src/routers/localProjectRouter");
+const { setUpSocketListeners } = require("./src/services/mainServerRequestHandler");
 
 const app = express();
 
 async function startServer() {
   await config.getMainServerConfig();
+  await setUpSocketListeners();
 
   const allowedOrigins = [
     config.mainServerConfig.frontendURL,

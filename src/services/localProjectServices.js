@@ -8,18 +8,25 @@ const {
   downloadImageFromCloudinary,
   ClientProjectBaseDirPath,
 } = require("../utils/clientProjectUtils");
-const { getProjectById, getDirectoryById, getFileById } = require("./databaseOperations");
+const {
+  getProjectById,
+  getDirectoryById,
+  getFileById,
+} = require("./databaseOperations");
 
-module.exports.createEmptyProject = asyncHandler(async (projectId)=>{
-    await fs.ensureDir(ClientProjectPath(projectId));
-    return;
-})
+module.exports.createEmptyProject = asyncHandler(async (projectId) => {
+  await fs.ensureDir(ClientProjectPath(projectId));
+  return;
+});
 
 async function copyProjectfromDatabase(projectId) {
-  const project = await getProjectById(projectId);
-
   const dirPath = ClientProjectPath(projectId);
   if (await fs.pathExists(dirPath)) {
+    return false;
+  }
+
+  const project = await getProjectById(projectId);
+  if (!project) {
     return false;
   }
 
@@ -66,12 +73,28 @@ async function copyDirectoryFromDatabase(dirPath, dirId) {
   }
 }
 
+module.exports.deleteProject = asyncHandler(async (projectId) => {
+  const projectPath = ClientProjectBaseDirPath(projectId);
+  await chmodRecursive(projectPath, '0o777')
+  await fs.remove(projectPath);
 
-module.exports.deleteProject = asyncHandler(async (projectId)=>{
-   const projectPath = ClientProjectBaseDirPath(projectId);
-   await fs.remove(projectPath);
-   return true;
-})
+  const chmodRecursive = async (dir, mode) => {
+    const items = await fs.readdir(dir);
+    await Promise.all(
+      items.map(async (item) => {
+        const itemPath = path.join(dir, item);
+        const stats = await fs.lstat(itemPath);
+        if (stats.isDirectory()) {
+          await chmodRecursive(itemPath, mode);
+        }
+        await fs.chmod(itemPath, mode);
+      })
+    );
+    await fs.chmod(dir, mode);
+  };
+
+  return true;
+});
 
 module.exports.manageOnLocal = asyncHandler(
   async (id, isFile, task, nameOrContent = null) => {
@@ -79,21 +102,21 @@ module.exports.manageOnLocal = asyncHandler(
     if (!filefolderpath) {
       return null;
     }
-    
+
     // creating new file or folder
     if (task === "create") {
       if (isFile) {
         const file = await getFileById(id);
-        if(file.contentType === "Binary"){
-            await downloadImageFromCloudinary(file.url, filefolderpath)
-            return;
+        if (file.contentType === "Binary") {
+          await downloadImageFromCloudinary(file.url, filefolderpath);
+          return;
         }
-        await fs.writeFile(filefolderpath, "");
+        await fs.writeFile(filefolderpath, nameOrContent || "");
       } else {
         await fs.ensureDir(filefolderpath);
       }
-    } 
-    
+    }
+
     // rename file or folder
     else if (task === "editname") {
       if (!nameOrContent) {
@@ -103,16 +126,15 @@ module.exports.manageOnLocal = asyncHandler(
       }
       var newPath = path.join(filefolderpath, "../", nameOrContent);
       await fs.rename(filefolderpath, newPath);
-    } 
-    
+    }
+
     // delete file or folder
     else if (task === "delete") {
       await fs.remove(filefolderpath);
-    } 
-    
-    
+    }
+
     // updating content of file
-    else if (task === "write") {  
+    else if (task === "write") {
       if (!isFile) {
         throw new Error("Write operation can only be performed in a file");
       }
@@ -127,7 +149,6 @@ module.exports.manageOnLocal = asyncHandler(
     return true;
   }
 );
-
 
 module.exports.getFileOrFolderPath = asyncHandler(async (id, isFile) => {
   var pathStack = [];
