@@ -24,6 +24,7 @@ async function startServer() {
   const allowedOrigins = [
     config.mainServerConfig.frontendURL,
     config.mainServerConfig.baseURL,
+    config.baseURL
   ];
 
   app.use(
