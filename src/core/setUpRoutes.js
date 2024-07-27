@@ -15,7 +15,7 @@ module.exports.setUpClientProjectRoutes = async function () {
 
   const projects = await getAllProjects();
 
-  await new Promise.all(projects.map((project)=>{
+  await Promise.all(projects.map((project)=>{
      return start(project);
   }))
 };
