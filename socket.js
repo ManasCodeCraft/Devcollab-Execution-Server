@@ -5,6 +5,12 @@ var socket = null;
 
 function connectMainServer() {
   socket = io(`${mainServerURL}/execution-server-socket`);
+  return new Promise(resolve=>{
+    socket.once("connect", () => {
+      console.log("Connected to main server");
+      resolve();
+    });
+  })
 }
 
 connectMainServer();
