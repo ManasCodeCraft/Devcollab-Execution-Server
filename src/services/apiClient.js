@@ -1,8 +1,7 @@
 const interServerRequestKey  = require('../../config/config').interServerRequestKey;
-const {getSocket} = require('../../socket');
-const socket = getSocket();
 
 const socketRequest = async (eventName, data) => {
+   const socket = require('../../socket').getSocket();
    data.key = interServerRequestKey;
    const result = await new Promise((resolve) => {
       socket.emit(eventName, data);
