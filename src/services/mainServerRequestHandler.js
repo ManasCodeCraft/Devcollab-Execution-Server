@@ -7,10 +7,8 @@
   const ClientAppManager = require("../core/ClientAppManager");
   const interServerRequestKey =
     require("../../config/config").interServerRequestKey;
-  const {getSocket} = require('../../socket');
-  const socket = getSocket();
-
-module.exports.setUpSocketListeners = async ()=>{
+  
+module.exports.setUpSocketListeners = async (socket)=>{
 
   socket.on(
     "on-local-crud",
@@ -24,6 +22,7 @@ module.exports.setUpSocketListeners = async ()=>{
 
   socket.on("run-nodejs-init", async ({ key, projectId, userId }) => {
     if (key === interServerRequestKey) {
+      console.log('got request run nodejs')
       await initialExecute(projectId, userId);
     }
     socket.emit("run-nodejs-init-response");

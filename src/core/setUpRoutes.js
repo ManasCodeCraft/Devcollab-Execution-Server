@@ -14,15 +14,19 @@ module.exports.setUpClientProjectRoutes = async function () {
   }
 
   const projects = await getAllProjects();
-  const { runClientProject } = require("../services/runNodejsServices");
 
-  for (let project of projects) {
-    if (project.runningStatus === "running") {
-      console.log("Starting - ", project._id);
-      await runClientProject(project._id);
-    }
-  }
+  await new Promise.all(projects.map((project)=>{
+     return start(project);
+  }))
 };
+
+async function start(project) {
+  const { runClientProject } = require("../services/runNodejsServices");
+  if (project.runningStatus === "running") {
+    console.log("Starting - ", project._id);
+    await runClientProject(project._id);
+  }
+}
 
 module.exports.setUpRoute = asyncHandler(async (projectId) => {
   const devcollabKey = config.mainServerConfig.devcollabKey;
