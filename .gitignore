@@ -1,4 +1,5 @@
-/ClientProjects
+/ClientProjects/*
+!/ClientProjects/templateDir
 /nodemon.json
 /node_modules
 /check.js
