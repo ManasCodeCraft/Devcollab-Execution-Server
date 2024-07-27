@@ -14,20 +14,17 @@ const { onConsoleLog, updateStatus } = require("./apiClient");
 const { executeCommand } = require("../utils/executeCommand");
 
 module.exports.initialExecute = asyncHandler(async (projectId, userId)=>{
-  console.log('function called')
   const client_project_path = ClientProjectPath(projectId);
   const client_basedir_path = ClientProjectBaseDirPath(projectId);
   const templatePath = clientProjectTemplatePath();
-  console.log('copying template')
   await fs.copy(path.join(templatePath, 'project'), client_project_path);
-  console.log('copying other')
   await fs.copy(path.join(templatePath, 'program_run.js'), path.join(client_basedir_path, 'program_run.js'));
   await module.exports.runClientProject(projectId);
 })
 
 module.exports.runClientProject = asyncHandler(async (projectId) => {
   const client_project_path = ClientProjectPath(projectId);
-  if (!fs.existsSync(client_project_path)) {
+  if (!(await fs.exists(client_project_path))) {
      if(await copyProjectfromDatabase(projectId)){
         await executeCommand('npm init -y', client_project_path)
         await executeCommand("npm install", client_project_path);

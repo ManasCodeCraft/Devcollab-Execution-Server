@@ -5,10 +5,15 @@ const { mainServerURL } = require('../../config/config')
 const io = require('socket.io-client');
 const runningStatusSocket = io(`${mainServerURL}/running-status-socket`);
 const path = require('path');
+const fs = require('fs-extra');
 const consoleLogSocket = io(`${mainServerURL}/console-log-socket`);
 
 module.exports.runNodejsProgram = asyncHandler(async (fileId, projectId, filePath, fileName)=>{
     const runProgramPath = path.join(ClientProjectBaseDirPath(projectId), 'program_run.js');
+    if(!(await fs.exists(runProgramPath))){
+        const templatePath = path.join(clientProjectTemplatePath(),'program_run.js' )
+        await fs.copy(templatePath, runProgramPath)
+    }
 
     const new_process = fork(runProgramPath, {env: {client_project_path:ClientProjectPath(projectId), filePath, mainServerURL, projectId, fileName}});
     runningStatusSocket.emit('program-update-status', {projectId, userId: null, status: 'running'})
